@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block title %}Konfigurasi Penilai{% endblock %}
+
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Konfigurasi Penilai (Multi-Rater)</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-custom">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Penilai</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-4 animate-in" style="--delay: 2">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('penilai_config') }}" class="row align-items-end">
+            <div class="col-md-8">
+                <label for="id_kuesioner" class="form-label">Pilih Kuesioner Aktif</label>
+                <select name="id_kuesioner" id="id_kuesioner" class="form-select" required>
+                    <option value="">-- Pilih Kuesioner --</option>
+                    {% for q in kuesioner %}
+                    <option value="{{ q.id_kuesioner }}" {% if id_kuesioner == q.id_kuesioner %}selected{% endif %}>
+                        {{ q.nama_kuesioner }} (Periode: {{ q.periode }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> Tampilkan Penilai</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if id_kuesioner %}
+<div class="card animate-in" style="--delay: 3">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary">Daftar Assignment Penilai</h5>
+        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addPenilaiModal">
+            <i class="fas fa-user-plus me-1"></i> Tambah Penilai
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered datatable">
+                <thead>
+                    <tr>
+                        <th width="5%">No</th>
+                        <th>Karyawan yang Dinilai</th>
+                        <th>Penilai</th>
+                        <th>Kategori</th>
+                        <th width="10%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in penilai_list %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="font-weight-bold">{{ p.dinilai_nama }}</td>
+                        <td>{{ p.penilai_nama }}</td>
+                        <td>
+                            {% if p.kategori == 'diri_sendiri' %}<span class="badge bg-secondary">Diri Sendiri</span>
+                            {% elif p.kategori == 'atasan' %}<span class="badge bg-danger">Atasan</span>
+                            {% elif p.kategori == 'bawahan' %}<span class="badge bg-success">Bawahan</span>
+                            {% else %}<span class="badge bg-info text-dark">Rekan</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('penilai_config_delete', id_penilai=p.id_penilai) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus penilai ini?')"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Add Penilai -->
+<div class="modal fade" id="addPenilaiModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('penilai_config_add') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Assignment Penilai</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id_kuesioner" value="{{ id_kuesioner }}">
+                    <div class="mb-3">
+                        <label class="form-label">Karyawan yang Dinilai</label>
+                        <select name="id_dinilai" class="form-select" required>
+                            <option value="">-- Pilih Karyawan --</option>
+                            {% for k in karyawan %}
+                            <option value="{{ k.id_karyawan }}">{{ k.nip }} - {{ k.nama }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Siapa yang Menilai?</label>
+                        <select name="id_penilai" class="form-select" required>
+                            <option value="">-- Pilih Penilai --</option>
+                            {% for k in karyawan %}
+                            <option value="{{ k.id_karyawan }}">{{ k.nip }} - {{ k.nama }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kategori Penilai</label>
+                        <select name="kategori" class="form-select" required>
+                            <option value="atasan">Atasan</option>
+                            <option value="rekan">Rekan</option>
+                            <option value="bawahan">Bawahan</option>
+                            <option value="diri_sendiri">Diri Sendiri</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Simpan Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

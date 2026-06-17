@@ -1,0 +1,323 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard HC{% endblock %}
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Dashboard HC</h1>
+    <p>Monitoring Penilaian 360° AKHLAK</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4 animate-in" style="--delay: 2">
+        <div class="card stat-card primary h-100">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">Total Karyawan</div>
+                <div class="stat-value">{{ total_karyawan }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4 animate-in" style="--delay: 3">
+        <div class="card stat-card info h-100">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">Kuesioner Aktif</div>
+                <div class="stat-value">{{ total_kuesioner_aktif }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4 animate-in" style="--delay: 4">
+        <div class="card stat-card success h-100">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">Sudah Mengisi</div>
+                <div class="stat-value">{{ total_selesai }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4 animate-in" style="--delay: 5">
+        <div class="card stat-card danger h-100">
+            <div class="stat-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-label">Belum Mengisi</div>
+                <div class="stat-value">{{ total_belum }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4 animate-in" style="--delay: 6">
+        <div class="card h-100" style="background-color: #e0f2fe;">
+            <div class="card-body">
+                <div id="chart-karyawan" style="width:100%; height:400px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4 animate-in" style="--delay: 7">
+        <div class="card h-100" style="background-color: #e0f2fe;">
+            <div class="card-header-custom" style="background-color: #e0f2fe; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <h5 class="m-0 font-weight-bold text-primary">Progress Evaluator (Atasan/Bawahan/Rekan/Diri Sendiri)</h5>
+            </div>
+            <div class="card-body">
+                <div id="chart-penilai" style="width:100%; height:400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4 animate-in" style="--delay: 8">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">Progress Pengisian Kuesioner</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="small font-weight-bold">Tingkat Partisipasi <span class="float-end">{{ persen_pengisian }}%</span></h4>
+                <div class="progress progress-custom mb-4">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ persen_pengisian }}%" aria-valuenow="{{ persen_pengisian }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5 class="small font-weight-bold mb-3">Aksi Cepat</h5>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('kuesioner') }}" class="btn btn-outline-primary"><i class="fas fa-tasks me-1"></i> Kelola Kuesioner</a>
+                        <form action="{{ url_for('api_hitung_skor', id_kuesioner=1) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-accent"><i class="fas fa-calculator me-1"></i> Hitung Skor</button>
+                        </form>
+                        <a href="{{ url_for('hasil') }}" class="btn btn-primary"><i class="fas fa-chart-bar me-1"></i> Lihat Hasil</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4 animate-in" style="--delay: 9">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">Aktivitas Terbaru</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for r in recent %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0 text-sm fw-bold">{{ r.nama }}</h6>
+                                <small class="text-muted">Menilai {{ r.dinilai_nama }} ({{ r.kategori | capitalize }})</small>
+                            </div>
+                            <span class="badge badge-status selesai"><i class="fas fa-check"></i> Selesai</span>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Belum ada aktivitas</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const deptData = {{ karyawan_dept_chart | safe }};
+    const penilaiData = {{ penilai_chart | safe }};
+    
+    // Calculate total for pie chart
+    const totalPegawai = deptData.reduce((acc, curr) => acc + curr.y, 0);
+
+    // Karyawan Pie Chart (Styled like the reference image)
+    Highcharts.chart('chart-karyawan', {
+        chart: {
+            type: 'pie',
+            backgroundColor: '#e0f2fe',
+            style: {
+                fontFamily: 'Inter, sans-serif'
+            }
+        },
+        title: {
+            text: 'KATEGORI PEGAWAI PERUSAHAAN',
+            style: {
+                color: '#0A1931',
+                fontWeight: 'bold',
+                fontSize: '20px'
+            }
+        },
+        subtitle: {
+            text: 'BERDASARKAN DEPARTEMEN',
+            style: {
+                color: '#475569',
+                fontSize: '14px'
+            }
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y} orang)'
+        },
+        accessibility: {
+            point: {
+                valueSuffix: '%'
+            }
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                colors: ['#fbbc05', '#34a853', '#fb8c00', '#ea4335', '#4285f4', '#8e24aa'],
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f}%<br/>{point.y} orang',
+                    distance: 20,
+                    style: {
+                        color: '#1f2937',
+                        textOutline: 'none',
+                        fontSize: '12px'
+                    },
+                    connectorColor: '#1f2937'
+                },
+                showInLegend: true,
+                borderWidth: 2,
+                borderColor: '#e0f2fe'
+            }
+        },
+        legend: {
+            itemStyle: {
+                color: '#1f2937',
+                fontWeight: 'normal'
+            },
+            itemHoverStyle: {
+                color: '#0A1931'
+            },
+            labelFormatter: function() {
+                return this.name + ' (' + this.y + ' orang)';
+            },
+            layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom'
+        },
+        exporting: {
+            buttons: {
+                contextButton: {
+                    theme: {
+                        fill: 'transparent',
+                        states: {
+                            hover: { fill: '#bae6fd' },
+                            select: { fill: '#bae6fd' }
+                        }
+                    },
+                    symbolStroke: '#1f2937'
+                }
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            name: 'Persentase',
+            colorByPoint: true,
+            data: deptData
+        }]
+    });
+
+    // Evaluator Progress Column Chart
+    Highcharts.chart('chart-penilai', {
+        chart: {
+            type: 'column',
+            backgroundColor: '#e0f2fe',
+            style: {
+                fontFamily: 'Inter, sans-serif'
+            }
+        },
+        title: {
+            text: 'Distribusi & Progress Penilai'
+        },
+        xAxis: {
+            categories: penilaiData.categories
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Jumlah Penilai'
+            },
+            stackLabels: {
+                enabled: true,
+                style: {
+                    fontWeight: 'bold',
+                    color: ( // theme
+                        Highcharts.defaultOptions.title.style &&
+                        Highcharts.defaultOptions.title.style.color
+                    ) || 'gray',
+                    textOutline: 'none'
+                }
+            }
+        },
+        legend: {
+            align: 'right',
+            x: -30,
+            verticalAlign: 'top',
+            y: 25,
+            floating: true,
+            backgroundColor:
+                Highcharts.defaultOptions.legend.backgroundColor || 'white',
+            borderColor: '#CCC',
+            borderWidth: 1,
+            shadow: false
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true
+                }
+            }
+        },
+        colors: ['#ea4335', '#34a853'], // Merah (Belum) dan Hijau (Selesai)
+        exporting: {
+            enabled: true,
+            buttons: {
+                contextButton: {
+                    theme: {
+                        fill: 'transparent',
+                        states: {
+                            hover: { fill: '#bae6fd' },
+                            select: { fill: '#bae6fd' }
+                        }
+                    },
+                    symbolStroke: '#1f2937'
+                }
+            }
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            name: 'Belum Mengisi',
+            data: penilaiData.belum
+        }, {
+            name: 'Selesai',
+            data: penilaiData.selesai
+        }]
+    });
+});
+</script>
+{% endblock %}

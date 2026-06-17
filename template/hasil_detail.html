@@ -1,0 +1,170 @@
+{% extends "layout.html" %}
+{% block title %}Detail Hasil - {{ karyawan.nama }}{% endblock %}
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Hasil Penilaian — {{ karyawan.nama }}</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-custom">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('hasil') }}">Hasil</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Detail</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card mb-4 animate-in" style="--delay: 2">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-4 border-end">
+                <small class="text-muted d-block">NIP</small>
+                <h5 class="font-weight-bold mb-0 text-primary">{{ karyawan.nip }}</h5>
+            </div>
+            <div class="col-md-4 border-end">
+                <small class="text-muted d-block">Jabatan</small>
+                <h5 class="font-weight-bold mb-0 text-primary">{{ karyawan.jabatan }}</h5>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted d-block">Departemen</small>
+                <h5 class="font-weight-bold mb-0 text-primary">{{ karyawan.departemen }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7 mb-4 animate-in" style="--delay: 3">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">Tabel Skor per Dimensi</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover datatable w-100">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Dimensi</th>
+                                <th class="text-center" title="Bobot 40%">Atasan<br><small class="text-muted">(40%)</small></th>
+                                <th class="text-center" title="Bobot 20%">Rekan<br><small class="text-muted">(20%)</small></th>
+                                <th class="text-center" title="Bobot 30%">Bawahan<br><small class="text-muted">(30%)</small></th>
+                                <th class="text-center" title="Bobot 10%">Diri Sendiri<br><small class="text-muted">(10%)</small></th>
+                                <th class="text-center bg-primary text-white">Skor Akhir</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set min_skor = 5.0 %}
+                            {% set max_skor = 0.0 %}
+                            {% for s in skor_list %}
+                                {% if s.skor_akhir < min_skor %}{% set min_skor = s.skor_akhir %}{% endif %}
+                                {% if s.skor_akhir > max_skor %}{% set max_skor = s.skor_akhir %}{% endif %}
+                            {% endfor %}
+
+                            {% for s in skor_list %}
+                            <tr>
+                                <td class="font-weight-bold">{{ s.dimensi }}</td>
+                                <td class="text-center">{{ "%.2f"|format(s.skor_atasan) }}</td>
+                                <td class="text-center">{{ "%.2f"|format(s.skor_rekan) }}</td>
+                                <td class="text-center">{{ "%.2f"|format(s.skor_bawahan) }}</td>
+                                <td class="text-center">{{ "%.2f"|format(s.skor_diri) }}</td>
+                                <td class="text-center font-weight-bold 
+                                    {% if s.skor_akhir == max_skor %}text-success
+                                    {% elif s.skor_akhir == min_skor %}text-danger
+                                    {% endif %}">
+                                    {{ "%.2f"|format(s.skor_akhir) }}
+                                    {% if s.skor_akhir == max_skor %}<i class="fas fa-arrow-up ms-1" title="Tertinggi"></i>{% endif %}
+                                    {% if s.skor_akhir == min_skor %}<i class="fas fa-arrow-down ms-1" title="Terendah"></i>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-secondary mt-3 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Formula:</strong> Skor Akhir = (Atasan × 40%) + (Rekan × 20%) + (Bawahan × 30%) + (Diri Sendiri × 10%)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-5 mb-4 animate-in" style="--delay: 4">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">Radar Chart Kompetensi</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:400px; width:100%">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const data = {{ chart_data | safe }};
+        
+        const labels = Object.keys(data);
+        const atasanData = labels.map(l => data[l].atasan);
+        const rekanData = labels.map(l => data[l].rekan);
+        const bawahanData = labels.map(l => data[l].bawahan);
+        const diriData = labels.map(l => data[l].diri);
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Atasan',
+                        data: atasanData,
+                        backgroundColor: 'rgba(15, 43, 92, 0.15)',
+                        borderColor: 'rgba(15, 43, 92, 0.7)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Rekan Kerja',
+                        data: rekanData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderColor: 'rgba(59, 130, 246, 0.7)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Bawahan',
+                        data: bawahanData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        borderColor: 'rgba(16, 185, 129, 0.7)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Diri Sendiri',
+                        data: diriData,
+                        backgroundColor: 'rgba(232, 168, 56, 0.15)',
+                        borderColor: 'rgba(232, 168, 56, 0.7)',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scale: {
+                    ticks: {
+                        beginAtZero: true,
+                        max: 5,
+                        stepSize: 1
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

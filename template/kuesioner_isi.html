@@ -1,0 +1,330 @@
+{% extends "layout.html" %}
+{% block title %}Isi Kuesioner - {{ penilai.dinilai_nama }}{% endblock %}
+{% block extra_css %}
+<style>
+    .likert-group {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--primary);
+        transition: all 0.2s ease;
+    }
+    .likert-group:hover {
+        background: #f1f5f9;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .likert-question {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+        color: #1e293b;
+    }
+    .likert-options {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .likert-option {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .likert-option:hover {
+        border-color: var(--accent);
+        background: #fffbeb;
+    }
+    .likert-option input[type="radio"] {
+        display: none;
+    }
+    .likert-option.selected {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    .likert-option.selected .option-label {
+        color: white;
+    }
+    .option-score {
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+    .option-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        display: block;
+    }
+    
+    .dimensi-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+    .dimensi-tab {
+        padding: 10px 20px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.2s ease;
+    }
+    .dimensi-tab.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: 0 4px 6px rgba(15, 43, 92, 0.2);
+    }
+    .dimensi-content {
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    .dimensi-content.active {
+        display: block;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #autosave-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(15, 43, 92, 0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Penilaian: {{ penilai.dinilai_nama }}</h1>
+    <p>Kategori: {{ penilai.kategori | capitalize | replace('_', ' ') }} — {{ penilai.nama_kuesioner }}</p>
+</div>
+
+{% if penilai.kategori != 'diri_sendiri' %}
+<div class="alert alert-info d-flex align-items-center animate-in" style="--delay: 2">
+    <i class="fas fa-info-circle fa-2x me-3"></i>
+    <div>
+        <strong>Perhatian:</strong> Identitas Anda sebagai penilai akan <strong>DIRAHASIAKAN</strong> dan hasil hanya akan ditampilkan secara agregat kepada yang dinilai.
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-4 animate-in" style="--delay: 3">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between mb-1">
+            <small class="font-weight-bold">Progress Pengisian</small>
+            <small class="font-weight-bold" id="progress-text">{{ progress }}%</small>
+        </div>
+        <div class="progress progress-custom">
+            <div class="progress-bar bg-accent" id="progress-bar" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+<form id="kuesioner-form" action="{{ url_for('kuesioner_isi', id_penilai=penilai.id_penilai) }}" method="POST">
+    <div class="dimensi-tabs animate-in" style="--delay: 4">
+        {% for dim in dimensi_order %}
+        <div class="dimensi-tab {% if loop.first %}active{% endif %}" data-target="dim-{{ loop.index }}">
+            {{ dim }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card animate-in" style="--delay: 5">
+        <div class="card-body">
+            {% for dim in dimensi_order %}
+            <div id="dim-{{ loop.index }}" class="dimensi-content {% if loop.first %}active{% endif %}">
+                <h4 class="mb-4 pb-2 border-bottom text-primary"><i class="fas fa-star me-2 text-accent"></i> Dimensi: {{ dim }}</h4>
+                
+                {% for p in grouped.get(dim, []) %}
+                <div class="likert-group">
+                    <div class="likert-question">{{ loop.index }}. {{ p.teks_pertanyaan }}</div>
+                    <div class="likert-options">
+                        {% set options = [
+                            (1, 'Sangat Kurang'),
+                            (2, 'Kurang'),
+                            (3, 'Cukup'),
+                            (4, 'Baik'),
+                            (5, 'Sangat Baik')
+                        ] %}
+                        
+                        {% for val, label in options %}
+                        {% set is_checked = existing.get(p.id_pertanyaan) == val %}
+                        <label class="likert-option {% if is_checked %}selected{% endif %}" onclick="selectOption(this)">
+                            <input type="radio" name="q_{{ p.id_pertanyaan }}" value="{{ val }}" {% if is_checked %}checked{% endif %} onchange="updateProgress()">
+                            <span class="option-score">{{ val }}</span>
+                            <span class="option-label">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="d-flex justify-content-between mt-4">
+                    {% if not loop.first %}
+                    <button type="button" class="btn btn-outline-primary" onclick="switchTab({{ loop.index - 1 }})"><i class="fas fa-arrow-left me-1"></i> Sebelumnya</button>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+                    
+                    {% if not loop.last %}
+                    <button type="button" class="btn btn-primary" onclick="switchTab({{ loop.index + 1 }})">Selanjutnya <i class="fas fa-arrow-right ms-1"></i></button>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="card-footer bg-light p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('kuesioner') }}" class="btn btn-outline-secondary">Kembali</a>
+                <div class="d-flex gap-2">
+                    <button type="submit" name="action" value="draft" class="btn btn-outline-primary"><i class="fas fa-save me-1"></i> Simpan Draft</button>
+                    <button type="submit" name="action" value="submit" class="btn btn-accent" onclick="return confirmSubmit()"><i class="fas fa-paper-plane me-1"></i> Submit Final</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div id="autosave-indicator">
+    <i class="fas fa-spinner fa-spin me-2"></i> Menyimpan draft...
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching logic
+    const tabs = document.querySelectorAll('.dimensi-tab');
+    const contents = document.querySelectorAll('.dimensi-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetId = tab.getAttribute('data-target');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            tab.classList.add('active');
+            document.getElementById(targetId).classList.add('active');
+            
+            // Scroll to top of card
+            document.querySelector('.dimensi-tabs').scrollIntoView({behavior: 'smooth', block: 'start'});
+        });
+    });
+    
+    function switchTab(index) {
+        document.querySelector(`.dimensi-tab[data-target="dim-${index}"]`).click();
+    }
+    
+    // UI Selection logic
+    function selectOption(labelElement) {
+        // Find all options in this group and remove selected class
+        const group = labelElement.closest('.likert-options');
+        const options = group.querySelectorAll('.likert-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        
+        // Add selected class to clicked element
+        labelElement.classList.add('selected');
+    }
+    
+    // Progress bar update
+    function updateProgress() {
+        const total = document.querySelectorAll('input[type="radio"]').length / 5;
+        const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+        const percentage = Math.round((answered / total) * 100);
+        
+        document.getElementById('progress-bar').style.width = percentage + '%';
+        document.getElementById('progress-bar').setAttribute('aria-valuenow', percentage);
+        document.getElementById('progress-text').innerText = percentage + '%';
+    }
+    
+    // Confirm submit
+    function confirmSubmit() {
+        const total = document.querySelectorAll('input[type="radio"]').length / 5;
+        const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+        
+        if (answered < total) {
+            alert(`Anda baru menjawab ${answered} dari ${total} pertanyaan. Mohon lengkapi semua pertanyaan sebelum melakukan Submit Final. (Gunakan 'Simpan Draft' jika ingin melanjutkan nanti)`);
+            return false;
+        }
+        
+        return confirm('Apakah Anda yakin ingin melakukan Submit Final? Data yang sudah disubmit tidak dapat diubah lagi.');
+    }
+    
+    // Auto-save logic
+    let autosaveTimer;
+    const form = document.getElementById('kuesioner-form');
+    
+    form.addEventListener('change', () => {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(autoSave, 5000); // Wait 5s after last change before autosaving
+    });
+    
+    function autoSave() {
+        const indicator = document.getElementById('autosave-indicator');
+        indicator.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Menyimpan draft...';
+        indicator.style.display = 'block';
+        
+        const formData = new FormData(form);
+        const answers = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (key.startsWith('q_')) {
+                const questionId = key.replace('q_', '');
+                answers[questionId] = value;
+            }
+        }
+        
+        if (Object.keys(answers).length === 0) {
+            indicator.style.display = 'none';
+            return;
+        }
+        
+        fetch("{{ url_for('api_autosave') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id_penilai: {{ penilai.id_penilai }},
+                answers: answers
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                indicator.innerHTML = '<i class="fas fa-check-circle me-2 text-success"></i> Draft tersimpan';
+                setTimeout(() => { indicator.style.display = 'none'; }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Error autosaving:', error);
+            indicator.style.display = 'none';
+        });
+    }
+</script>
+{% endblock %}

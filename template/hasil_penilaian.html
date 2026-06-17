@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block title %}Hasil Penilaian{% endblock %}
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Hasil Penilaian</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-custom">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Hasil</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card animate-in" style="--delay: 2">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary">Rekapitulasi Hasil Penilaian 360°</h5>
+        {% if session.get('role') == 'hc' %}
+        <form action="{{ url_for('api_hitung_skor', id_kuesioner=1) }}" method="POST" class="m-0">
+            <button type="submit" class="btn btn-accent btn-sm"><i class="fas fa-calculator me-1"></i> Hitung & Publikasi Hasil</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table table-bordered datatable w-100">
+                <thead>
+                    <tr>
+                        <th width="5%">No</th>
+                        <th width="10%">NIP</th>
+                        <th width="25%">Nama</th>
+                        <th width="15%">Jabatan</th>
+                        <th width="15%">Departemen</th>
+                        <th width="15%">Skor Rata-rata</th>
+                        <th width="15%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in hasil_list %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ h.nip }}</td>
+                        <td class="font-weight-bold">{{ h.nama }}</td>
+                        <td>{{ h.jabatan }}</td>
+                        <td>{{ h.departemen }}</td>
+                        <td>
+                            {% if h.rata_rata %}
+                                {% if h.rata_rata >= 4.0 %}
+                                    <span class="badge bg-success p-2" style="font-size: 0.9rem;">{{ h.rata_rata }}</span>
+                                {% elif h.rata_rata >= 3.0 %}
+                                    <span class="badge bg-warning text-dark p-2" style="font-size: 0.9rem;">{{ h.rata_rata }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger p-2" style="font-size: 0.9rem;">{{ h.rata_rata }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('hasil_detail', id_karyawan=h.id_karyawan) }}" class="btn btn-sm btn-primary {% if not h.rata_rata %}disabled{% endif %}">
+                                <i class="fas fa-chart-bar"></i> Lihat Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

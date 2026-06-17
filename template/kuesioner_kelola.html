@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit Kuesioner' if kuesioner else 'Buat Kuesioner Baru' }}{% endblock %}
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>{{ 'Edit Kuesioner' if kuesioner else 'Buat Kuesioner Baru' }}</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-custom">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('kuesioner') }}">Kuesioner</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if kuesioner else 'Buat Baru' }}</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card animate-in" style="--delay: 2">
+    <div class="card-header-custom">
+        <h5 class="m-0 font-weight-bold text-primary">Detail Kuesioner</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('kuesioner_kelola', id=kuesioner.id_kuesioner) if kuesioner else url_for('kuesioner_kelola') }}" method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nama_kuesioner" class="form-label font-weight-bold">Nama Kuesioner</label>
+                    <input type="text" class="form-control" id="nama_kuesioner" name="nama_kuesioner" required placeholder="Contoh: Penilaian AKHLAK Semester 1" value="{{ kuesioner.nama_kuesioner if kuesioner else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="periode" class="form-label font-weight-bold">Periode</label>
+                    <input type="text" class="form-control" id="periode" name="periode" required placeholder="Contoh: 2026-S1" value="{{ kuesioner.periode if kuesioner else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="tanggal_mulai" class="form-label font-weight-bold">Tanggal Mulai</label>
+                    <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" required value="{{ kuesioner.tanggal_mulai if kuesioner else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="tanggal_selesai" class="form-label font-weight-bold">Tanggal Selesai</label>
+                    <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required value="{{ kuesioner.tanggal_selesai if kuesioner else '' }}">
+                </div>
+                <div class="col-md-4 mb-4">
+                    <label for="status" class="form-label font-weight-bold">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="draft" {% if kuesioner and kuesioner.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="active" {% if kuesioner and kuesioner.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="closed" {% if kuesioner and kuesioner.status == 'closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+            </div>
+            
+            <hr class="mb-4">
+            
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('kuesioner') }}" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-1"></i> Batal</a>
+                <button type="submit" class="btn btn-accent"><i class="fas fa-save me-1"></i> Simpan Kuesioner</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

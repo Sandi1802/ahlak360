@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+{% block title %}Profil Saya{% endblock %}
+{% block content %}
+<div class="page-header animate-in" style="--delay: 1">
+    <h1>Profil Saya</h1>
+    <p>Kelola informasi akun dan kata sandi Anda</p>
+</div>
+
+<div class="row">
+    <!-- Kolom Kiri: Info Karyawan -->
+    <div class="col-lg-5 mb-4 animate-in" style="--delay: 2">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-id-card me-2"></i>Informasi Akun
+                </h5>
+            </div>
+            <div class="card-body text-center pt-5">
+                <div class="profile-avatar mb-4 mx-auto" style="width: 100px; height: 100px; background-color: #0d6efd; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                
+                {% if karyawan %}
+                <h4 class="font-weight-bold mb-1">{{ karyawan.nama }}</h4>
+                <p class="text-muted mb-4">{{ karyawan.nip }}</p>
+                
+                <ul class="list-group list-group-flush text-start">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fas fa-briefcase me-2"></i>Jabatan</span>
+                        <span class="font-weight-bold">{{ karyawan.jabatan }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fas fa-building me-2"></i>Departemen</span>
+                        <span class="font-weight-bold">{{ karyawan.departemen }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fas fa-user-tie me-2"></i>Atasan</span>
+                        <span class="font-weight-bold">{{ atasan.nama if atasan else '-' }}</span>
+                    </li>
+                </ul>
+                {% else %}
+                <h4 class="font-weight-bold mb-1">{{ session.get('username') }}</h4>
+                <p class="text-muted mb-4">Administrator Sistem</p>
+                
+                <ul class="list-group list-group-flush text-start">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-muted"><i class="fas fa-user-shield me-2"></i>Role</span>
+                        <span class="badge bg-primary">Human Capital</span>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolom Kanan: Ganti Password -->
+    <div class="col-lg-7 mb-4 animate-in" style="--delay: 3">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-lock me-2"></i>Ganti Kata Sandi
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>Sangat disarankan untuk mengganti kata sandi bawaan demi menjaga keamanan akun Anda.
+                </div>
+                
+                <form method="POST" action="{{ url_for('profile') }}" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <label for="old_password" class="form-label font-weight-bold">Kata Sandi Lama</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                            <input type="password" class="form-control" id="old_password" name="old_password" required placeholder="Masukkan kata sandi saat ini">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="new_password" class="form-label font-weight-bold">Kata Sandi Baru</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6" placeholder="Minimal 6 karakter">
+                        </div>
+                        <div class="form-text text-muted">Gunakan kombinasi huruf dan angka agar lebih aman.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="confirm_password" class="form-label font-weight-bold">Konfirmasi Kata Sandi Baru</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="6" placeholder="Ulangi kata sandi baru">
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Simpan Kata Sandi Baru
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
